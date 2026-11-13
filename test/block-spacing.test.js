@@ -11,6 +11,66 @@ const cli = fileURLToPath(new URL('../node_modules/oxlint/bin/oxlint', import.me
 
 const scenarios = [
   {
+    name: 'keeps response and repository declarations with their expectations',
+    input: `async function run() {
+  expect(created.status).toEqual(200);
+
+  const user = await created.json();
+
+  expect(user).toEqual({ id: expect.any(Number), name: input.name, email: input.email });
+
+  const row = await UserRepository.get(user.id, true);
+
+  expect(row.password_hash).toEqual(createHash('sha256').update(password).digest('hex'));
+  expect(row).not.toHaveProperty('password');
+}`,
+    expected: `async function run() {
+  expect(created.status).toEqual(200);
+
+  const user = await created.json();
+  expect(user).toEqual({ id: expect.any(Number), name: input.name, email: input.email });
+
+  const row = await UserRepository.get(user.id, true);
+  expect(row.password_hash).toEqual(createHash('sha256').update(password).digest('hex'));
+  expect(row).not.toHaveProperty('password');
+}`,
+  },
+  {
+    name: 'accepts a compact declaration and negated expectation',
+    input: 'const row = getRow();\nexpect(row).not.toHaveProperty("password");',
+    expected: 'const row = getRow();\nexpect(row).not.toHaveProperty("password");',
+  },
+  {
+    name: 'keeps a declaration with its multiline expectation',
+    input: 'const user = getUser();\n\nexpect(user).toEqual({\n  name: input.name,\n});',
+    expected: 'const user = getUser();\nexpect(user).toEqual({\n  name: input.name,\n});',
+  },
+  {
+    name: 'separates expectations of a different variable',
+    input: 'const user = getUser();\nexpect(other).toEqual(user);',
+    expected: 'const user = getUser();\n\nexpect(other).toEqual(user);',
+  },
+  {
+    name: 'does not treat an expected property name as a variable reference',
+    input: 'const user = getUser();\nexpect(result.user).toEqual(input);',
+    expected: 'const user = getUser();\n\nexpect(result.user).toEqual(input);',
+  },
+  {
+    name: 'preserves comments before expectations',
+    input: 'const user = getUser();\n\n// Check response\nexpect(user).toEqual(input);',
+    expected: 'const user = getUser();\n\n// Check response\nexpect(user).toEqual(input);',
+  },
+  {
+    name: 'keeps multiline declarations separate from expectations',
+    input: 'const user = getUser(\n  input,\n);\nexpect(user).toEqual(input);',
+    expected: 'const user = getUser(\n  input,\n);\n\nexpect(user).toEqual(input);',
+  },
+  {
+    name: 'keeps declaration expectations compact with CRLF',
+    input: 'const user = getUser();\r\n\r\n\r\nexpect(user).toEqual(input);',
+    expected: 'const user = getUser();\r\nexpect(user).toEqual(input);',
+  },
+  {
     name: 'keeps the authorization declaration with its single-line guard',
     input: `const authMiddleware: MiddlewareHandler = async (c, next) => {
   const token = c.req.header('Authorization');

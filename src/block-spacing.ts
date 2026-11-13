@@ -2,6 +2,23 @@ import type { Comment, CreateRule, ESTree, Plugin, Token } from '@oxlint/plugins
 
 type CheckStatementsInput = { statements: ESTree.Statement[] };
 type IsDeclarationInput = { node: ESTree.Node };
+type FindExpectationInput = { node: ESTree.Node };
+
+const findExpectation = ({ node }: FindExpectationInput): ESTree.CallExpression | null => {
+  let current = node;
+
+  while (current.type === 'CallExpression' || current.type === 'MemberExpression') {
+    if (current.type === 'MemberExpression') {
+      current = current.object;
+      continue;
+    }
+
+    if (current.callee.type === 'Identifier' && current.callee.name === 'expect') return current;
+    current = current.callee;
+  }
+
+  return null;
+};
 
 const controlStatements = new Set([
   'IfStatement',
@@ -90,6 +107,23 @@ const blockSpacing: CreateRule = {
                   identifier.range[1] <= statement.test.range[1],
               ),
             );
+        const expectation =
+          statement.type === 'ExpressionStatement'
+            ? findExpectation({ node: statement.expression })
+            : null;
+        const actual = expectation?.arguments[0];
+        const declarationExpectation =
+          previous.type === 'VariableDeclaration' &&
+          previous.loc.start.line === previous.loc.end.line &&
+          actual !== undefined &&
+          source
+            .getDeclaredVariables(previous)
+            .some((variable) =>
+              variable.references.some(
+                ({ identifier }) =>
+                  identifier.range[0] >= actual.range[0] && identifier.range[1] <= actual.range[1],
+              ),
+            );
         const similarCalls =
           previous.type === 'ExpressionStatement' &&
           statement.type === 'ExpressionStatement' &&
@@ -100,6 +134,7 @@ const blockSpacing: CreateRule = {
         const compactBoundary =
           declarationReturn ||
           declarationGuard ||
+          declarationExpectation ||
           (!multilineBoundary && (returnBoundary || similarCalls));
 
         if (compactBoundary && statement.loc.start.line - previous.loc.end.line > 1) {
