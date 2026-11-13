@@ -11,6 +11,60 @@ const cli = fileURLToPath(new URL('../node_modules/oxlint/bin/oxlint', import.me
 
 const scenarios = [
   {
+    name: 'keeps the authorization declaration with its single-line guard',
+    input: `const authMiddleware: MiddlewareHandler = async (c, next) => {
+  const token = c.req.header('Authorization');
+
+  if (!token) return c.json({ error: 'Unauthorized' }, 401);
+  await next();
+};`,
+    expected: `const authMiddleware: MiddlewareHandler = async (c, next) => {
+  const token = c.req.header('Authorization');
+  if (!token) return c.json({ error: 'Unauthorized' }, 401);
+  await next();
+};`,
+  },
+  {
+    name: 'accepts a compact declaration and guard',
+    input: 'const token = getToken();\nif (!token) return;',
+    expected: 'const token = getToken();\nif (!token) return;',
+  },
+  {
+    name: 'keeps a destructured declaration with its guard',
+    input: 'const { token } = request;\n\nif (!token) return;',
+    expected: 'const { token } = request;\nif (!token) return;',
+  },
+  {
+    name: 'separates a guard that checks a different variable',
+    input: 'const token = getToken();\nif (!ready) return;',
+    expected: 'const token = getToken();\n\nif (!ready) return;',
+  },
+  {
+    name: 'does not treat a property name as a reference to the declaration',
+    input: 'const token = getToken();\nif (!request.token) return;',
+    expected: 'const token = getToken();\n\nif (!request.token) return;',
+  },
+  {
+    name: 'separates a multiline guard from its declaration',
+    input: 'const token = getToken();\nif (!token) {\n  return;\n}',
+    expected: 'const token = getToken();\n\nif (!token) {\n  return;\n}',
+  },
+  {
+    name: 'separates a multiline declaration from its guard',
+    input: 'const token = getToken(\n  request,\n);\nif (!token) return;',
+    expected: 'const token = getToken(\n  request,\n);\n\nif (!token) return;',
+  },
+  {
+    name: 'preserves comments before a related guard',
+    input: 'const token = getToken();\n\n// Check authorization\nif (!token) return;',
+    expected: 'const token = getToken();\n\n// Check authorization\nif (!token) return;',
+  },
+  {
+    name: 'keeps declaration guards compact with CRLF',
+    input: 'const token = getToken();\r\n\r\n\r\nif (!token) return;',
+    expected: 'const token = getToken();\r\nif (!token) return;',
+  },
+  {
     name: 'keeps session cleanup and return together',
     input: `function register() {
   if (

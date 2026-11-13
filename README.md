@@ -51,9 +51,10 @@ Load only `pkg-import`:
 - Keep adjacent single-line declarations grouped; keep adjacent single-line calls grouped.
 - Remove blank lines between single-line calls with the same callee, unless separated by comments.
 - Remove blank lines between a single-line expression statement and a following single-line `return`, unless separated by comments.
-- Keep a single-line variable declaration with a following single-line `return` of that variable, unless separated by comments.
+- Keep a single-line variable declaration with any following `return`, including multiline returns, unless separated by comments.
+- Remove blank lines between a single-line `const` declaration and a following single-line `if` whose condition references a variable from that declaration, unless separated by comments.
 - Control statements: `if`, loops, `switch`, `try`.
-- Always separate preceding statements from control statements on following lines.
+- Separate preceding statements from control statements on following lines, except for the `const`/`if` case above.
 - Autofix: `oxlint --fix`.
 
 ```ts
@@ -133,10 +134,8 @@ import { helper } from '#root/utils/helper.js';
 ## Development
 
 ```sh
-npm ci
 npm run lint
-npm run tsc
-npm test
+npm run test
 npm pack --dry-run
 ```
 

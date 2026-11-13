@@ -76,6 +76,20 @@ const blockSpacing: CreateRule = {
           previous.type === 'VariableDeclaration' &&
           previous.loc.start.line === previous.loc.end.line &&
           statement.type === 'ReturnStatement';
+        const declarationGuard =
+          !multilineBoundary &&
+          previous.type === 'VariableDeclaration' &&
+          previous.kind === 'const' &&
+          statement.type === 'IfStatement' &&
+          source
+            .getDeclaredVariables(previous)
+            .some((variable) =>
+              variable.references.some(
+                ({ identifier }) =>
+                  identifier.range[0] >= statement.test.range[0] &&
+                  identifier.range[1] <= statement.test.range[1],
+              ),
+            );
         const similarCalls =
           previous.type === 'ExpressionStatement' &&
           statement.type === 'ExpressionStatement' &&
@@ -84,7 +98,9 @@ const blockSpacing: CreateRule = {
           source.getText(previous.expression.callee) ===
             source.getText(statement.expression.callee);
         const compactBoundary =
-          declarationReturn || (!multilineBoundary && (returnBoundary || similarCalls));
+          declarationReturn ||
+          declarationGuard ||
+          (!multilineBoundary && (returnBoundary || similarCalls));
 
         if (compactBoundary && statement.loc.start.line - previous.loc.end.line > 1) {
           const range: [number, number] = [previous.range[1], statement.range[0]];
