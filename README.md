@@ -1,6 +1,6 @@
 # oxlint-better
 
-Oxlint plugins written in TypeScript.
+Oxlint plugins collection for JS/TS projects without AI slop:
 
 - `block-spacing`: Separate statement groups and collapse excess blank lines.
 - `pkg-import`: Prefer aliases defined in `package.json#imports` over relative imports.
