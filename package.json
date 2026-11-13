@@ -1,6 +1,6 @@
 {
   "name": "oxlint-better",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Oxlint plugins collection for JS/TS projects.",
   "keywords": [
     "imports",

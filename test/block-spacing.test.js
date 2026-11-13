@@ -89,9 +89,26 @@ const scenarios = [
     expected: 'function run() {\n  const { value } = result;\n  return value;\n}',
   },
   {
-    name: 'preserves a declaration boundary when returning another value',
+    name: 'keeps a single-line declaration with a different returned value',
     input: 'function run() {\n  const value = 1;\n  return other;\n}',
-    expected: 'function run() {\n  const value = 1;\n\n  return other;\n}',
+    expected: 'function run() {\n  const value = 1;\n  return other;\n}',
+  },
+  ...['Account', 'Auth', 'UiBoard'].map((name) => ({
+    name: `keeps the lazy ${name} import with its object return`,
+    input: `const ${name} = React.lazy(async () => {
+  const module = await import('#web/views/${name}.tsx');
+
+  return { default: module.${name} };
+});`,
+    expected: `const ${name} = React.lazy(async () => {
+  const module = await import('#web/views/${name}.tsx');
+  return { default: module.${name} };
+});`,
+  })),
+  {
+    name: 'keeps a single-line declaration with a multiline return',
+    input: 'function run() {\n  const value = 1;\n\n  return {\n    value,\n  };\n}',
+    expected: 'function run() {\n  const value = 1;\n  return {\n    value,\n  };\n}',
   },
   {
     name: 'keeps multiline declarations separate from their return',
