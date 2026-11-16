@@ -1,6 +1,6 @@
 {
   "name": "oxlint-better",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Oxlint plugins collection for JS/TS projects without AI slop.",
   "keywords": [
     "imports",
@@ -39,7 +39,7 @@
     "tsc": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run oxlint && npm run oxfmt && npm run tsc",
     "test": "npm run build && node --test",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && cp src/config.json config.json",
     "prepack": "npm run build"
   },
   "dependencies": {

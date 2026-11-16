@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import test from 'node:test';
 import plugin, { blockSpacing } from 'oxlint-better';
+
+const executeFile = promisify(execFile);
 
 const cli = fileURLToPath(new URL('../node_modules/oxlint/bin/oxlint', import.meta.url));
 
@@ -454,7 +457,7 @@ test('exports block-spacing through the aggregate plugin', () => {
 });
 
 for (const scenario of scenarios) {
-  test(scenario.name, (t) => {
+  test(scenario.name, async (t) => {
     const directory = mkdtempSync(join(tmpdir(), 'block-spacing-'));
     t.after(() => rmSync(directory, { recursive: true, force: true }));
     const filename = join(directory, 'example.tsx');
@@ -473,21 +476,33 @@ for (const scenario of scenarios) {
         rules: { 'better/block-spacing': 'error' },
       }),
     );
-    const check = spawnSync(process.execPath, [cli, '-c', config, filename], {
-      cwd: directory,
-      encoding: 'utf8',
-    });
-    assert.equal(
-      check.status,
-      scenario.input === scenario.expected ? 0 : 1,
-      check.stdout + check.stderr,
-    );
-    for (let pass = 0; pass < 2; pass++) {
-      const result = spawnSync(process.execPath, [cli, '-c', config, '--fix', filename], {
+    let status = 0;
+    let output = '';
+
+    try {
+      const check = await executeFile(process.execPath, [cli, '-c', config, filename], {
         cwd: directory,
         encoding: 'utf8',
+        timeout: 30_000,
       });
-      assert.equal(result.status, 0, result.error?.message ?? result.stdout + result.stderr);
+      output = check.stdout + check.stderr;
+    } catch (error) {
+      if (!(error instanceof Error) || !('code' in error) || typeof error.code !== 'number') {
+        throw error;
+      }
+
+      status = error.code;
+      output = error.message;
+    }
+
+    assert.equal(status, scenario.input === scenario.expected ? 0 : 1, output);
+
+    for (let pass = 0; pass < 2; pass++) {
+      await executeFile(process.execPath, [cli, '-c', config, '--fix', filename], {
+        cwd: directory,
+        encoding: 'utf8',
+        timeout: 30_000,
+      });
       assert.equal(readFileSync(filename, 'utf8'), scenario.expected);
     }
   });

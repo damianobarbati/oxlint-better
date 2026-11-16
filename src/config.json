@@ -1,0 +1,12 @@
+{
+  "jsPlugins": ["./dist/index.js"],
+  "rules": {
+    "oxlint-better/block-spacing": "error",
+    "oxlint-better/prefer-package-imports": "error",
+    "oxlint-better/no-object-parameters": "error",
+    "oxlint-better/no-reduce-accumulator-copy": "error",
+    "oxlint-better/no-meaningless-unknown-aliases": "error",
+    "oxlint-better/no-unsafe-dictionary-values": "error",
+    "oxlint-better/no-narrowing-after-widening": "error"
+  }
+}
