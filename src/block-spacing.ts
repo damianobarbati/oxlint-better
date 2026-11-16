@@ -89,6 +89,12 @@ const blockSpacing: CreateRule = {
           statement.loc.start.line !== statement.loc.end.line;
         const returnBoundary =
           previous.type === 'ExpressionStatement' && statement.type === 'ReturnStatement';
+        const guardReturn =
+          !multilineBoundary &&
+          previous.type === 'IfStatement' &&
+          previous.alternate === null &&
+          previous.consequent.type === 'ThrowStatement' &&
+          statement.type === 'ReturnStatement';
         const declarationReturn =
           previous.type === 'VariableDeclaration' &&
           previous.loc.start.line === previous.loc.end.line &&
@@ -134,6 +140,7 @@ const blockSpacing: CreateRule = {
         const compactBoundary =
           declarationReturn ||
           declarationGuard ||
+          guardReturn ||
           declarationExpectation ||
           (!multilineBoundary && (returnBoundary || similarCalls));
 

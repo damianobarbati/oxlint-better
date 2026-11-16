@@ -125,6 +125,57 @@ const scenarios = [
     expected: 'const token = getToken();\r\nif (!token) return;',
   },
   {
+    name: 'keeps the current user throw guard with its return',
+    input: `class AuthService {
+  static currentUser() {
+    const user = authStorage.getStore()?.user;
+    if (!user) throw createError('AUTH_SIGN_IN_REQUIRED');
+
+    return user;
+  }
+}`,
+    expected: `class AuthService {
+  static currentUser() {
+    const user = authStorage.getStore()?.user;
+    if (!user) throw createError('AUTH_SIGN_IN_REQUIRED');
+    return user;
+  }
+}`,
+  },
+  {
+    name: 'accepts a compact throw guard and return',
+    input: 'function run() {\n  if (!user) throw error;\n  return user;\n}',
+    expected: 'function run() {\n  if (!user) throw error;\n  return user;\n}',
+  },
+  {
+    name: 'keeps throw guard returns compact with CRLF',
+    input: 'function run() {\r\n  if (!user) throw error;\r\n\r\n\r\n  return user;\r\n}',
+    expected: 'function run() {\r\n  if (!user) throw error;\r\n  return user;\r\n}',
+  },
+  {
+    name: 'preserves comments between a throw guard and return',
+    input:
+      'function run() {\n  if (!user) throw error;\n\n  // Return current user\n  return user;\n}',
+    expected:
+      'function run() {\n  if (!user) throw error;\n\n  // Return current user\n  return user;\n}',
+  },
+  {
+    name: 'keeps multiline throw guards separate from returns',
+    input: 'function run() {\n  if (!user) {\n    throw error;\n  }\n  return user;\n}',
+    expected: 'function run() {\n  if (!user) {\n    throw error;\n  }\n\n  return user;\n}',
+  },
+  {
+    name: 'preserves spacing after a guard without a throw',
+    input: 'function run() {\n  if (!user) logError();\n\n  return user;\n}',
+    expected: 'function run() {\n  if (!user) logError();\n\n  return user;\n}',
+  },
+  {
+    name: 'preserves spacing after a throw branch with an alternative',
+    input: 'function run() {\n  if (!user) throw error; else logUser(user);\n\n  return user;\n}',
+    expected:
+      'function run() {\n  if (!user) throw error; else logUser(user);\n\n  return user;\n}',
+  },
+  {
     name: 'keeps session cleanup and return together',
     input: `function register() {
   if (
