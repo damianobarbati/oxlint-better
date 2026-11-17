@@ -14,6 +14,75 @@ const cli = fileURLToPath(new URL('../node_modules/oxlint/bin/oxlint', import.me
 
 const scenarios = [
   {
+    name: 'keeps the deadline declaration with its abort check',
+    input: `async function validateCodexModel({ model, signal }) {
+  const deadline = AbortSignal.any([signal, AbortSignal.timeout(30_000)]);
+
+  deadline.throwIfAborted();
+
+  const child = spawn('codex', ['app-server', '--listen', 'stdio://'], { stdio: ['pipe', 'pipe', 'ignore'] });
+}`,
+    expected: `async function validateCodexModel({ model, signal }) {
+  const deadline = AbortSignal.any([signal, AbortSignal.timeout(30_000)]);
+  deadline.throwIfAborted();
+
+  const child = spawn('codex', ['app-server', '--listen', 'stdio://'], { stdio: ['pipe', 'pipe', 'ignore'] });
+}`,
+  },
+  {
+    name: 'groups consecutive methods with their variable declaration',
+    input:
+      'const client = createClient();\n\nclient.connect();\n\nawait client.send(data);\n\nclient.close();',
+    expected:
+      'const client = createClient();\nclient.connect();\nawait client.send(data);\nclient.close();',
+  },
+  {
+    name: 'accepts compact declarations and method calls',
+    input: 'let client = createClient();\nclient.connect();\nclient.close();',
+    expected: 'let client = createClient();\nclient.connect();\nclient.close();',
+  },
+  {
+    name: 'groups multiline declarations and methods',
+    input:
+      'const client = createClient({\n  timeout: 1000,\n});\n\nclient.send(\n  data,\n);\n\nclient.close();',
+    expected:
+      'const client = createClient({\n  timeout: 1000,\n});\nclient.send(\n  data,\n);\nclient.close();',
+  },
+  {
+    name: 'groups destructured bindings with optional computed and chained methods',
+    input:
+      'const { client } = services;\n\nclient?.connect();\n\nclient[method](data);\n\nclient.configure().send(data);',
+    expected:
+      'const { client } = services;\nclient?.connect();\nclient[method](data);\nclient.configure().send(data);',
+  },
+  {
+    name: 'separates methods of another variable and calls with the variable as argument',
+    input:
+      'const client = createClient();\nother.connect(client);\nconst request = createRequest();\nclient.send(request);',
+    expected:
+      'const client = createClient();\n\nother.connect(client);\n\nconst request = createRequest();\n\nclient.send(request);',
+  },
+  {
+    name: 'does not treat a method name as a reference to the declaration',
+    input: 'const connect = createClient();\nclient.connect();',
+    expected: 'const connect = createClient();\n\nclient.connect();',
+  },
+  {
+    name: 'ends method groups at unrelated statements',
+    input: 'const client = createClient();\nclient.connect();\nlog();\n\nclient.close();',
+    expected: 'const client = createClient();\nclient.connect();\nlog();\n\nclient.close();',
+  },
+  {
+    name: 'preserves comments before related methods',
+    input: 'const client = createClient();\n\n// Connect client\nclient.connect();',
+    expected: 'const client = createClient();\n\n// Connect client\nclient.connect();',
+  },
+  {
+    name: 'keeps declaration methods compact with CRLF',
+    input: 'const client = createClient();\r\n\r\n\r\nclient.connect();\r\n\r\nclient.close();',
+    expected: 'const client = createClient();\r\nclient.connect();\r\nclient.close();',
+  },
+  {
     name: 'keeps response and repository declarations with their expectations',
     input: `async function run() {
   expect(created.status).toEqual(200);

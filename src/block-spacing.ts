@@ -3,6 +3,28 @@ import type { Comment, CreateRule, ESTree, Plugin, Token } from '@oxlint/plugins
 type CheckStatementsInput = { statements: ESTree.Statement[] };
 type IsDeclarationInput = { node: ESTree.Node };
 type FindExpectationInput = { node: ESTree.Node };
+type FindMethodReceiverInput = { node: ESTree.Node };
+
+const findMethodReceiver = ({ node }: FindMethodReceiverInput): ESTree.Node | null => {
+  let current = node;
+
+  while (current.type === 'AwaitExpression' || current.type === 'ChainExpression') {
+    current = current.type === 'AwaitExpression' ? current.argument : current.expression;
+  }
+
+  if (current.type !== 'CallExpression' || current.callee.type !== 'MemberExpression') {
+    return null;
+  }
+
+  current = current.callee.object;
+
+  while (current.type === 'MemberExpression' || current.type === 'CallExpression') {
+    current = current.type === 'MemberExpression' ? current.object : current.callee;
+  }
+
+  const receiver = current.type === 'Identifier' ? current : null;
+  return receiver;
+};
 
 const findExpectation = ({ node }: FindExpectationInput): ESTree.CallExpression | null => {
   let current = node;
@@ -78,9 +100,36 @@ const blockSpacing: CreateRule = {
     const compactGapStarts = new Set<number>();
 
     const checkStatements = ({ statements }: CheckStatementsInput) => {
+      let methodDeclaration: ESTree.VariableDeclaration | null = null;
+
       for (let index = 1; index < statements.length; index++) {
         const statement = statements[index];
         const previous = statements[index - 1];
+
+        if (previous.type === 'VariableDeclaration') {
+          methodDeclaration = previous;
+        }
+
+        const receiver =
+          statement.type === 'ExpressionStatement'
+            ? findMethodReceiver({ node: statement.expression })
+            : null;
+        const declarationMethod =
+          methodDeclaration !== null &&
+          receiver !== null &&
+          source
+            .getDeclaredVariables(methodDeclaration)
+            .some((variable) =>
+              variable.references.some(
+                ({ identifier }) =>
+                  identifier.range[0] === receiver.range[0] &&
+                  identifier.range[1] === receiver.range[1],
+              ),
+            );
+
+        if (!declarationMethod) {
+          methodDeclaration = null;
+        }
 
         const declarationBoundary =
           isDeclaration({ node: previous }) !== isDeclaration({ node: statement });
@@ -138,6 +187,7 @@ const blockSpacing: CreateRule = {
           source.getText(previous.expression.callee) ===
             source.getText(statement.expression.callee);
         const compactBoundary =
+          declarationMethod ||
           declarationReturn ||
           declarationGuard ||
           guardReturn ||
