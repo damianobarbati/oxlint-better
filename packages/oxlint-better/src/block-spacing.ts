@@ -191,7 +191,7 @@ const blockSpacing: CreateRule = {
           (statement.argument?.type === 'JSXElement' || statement.argument?.type === 'JSXFragment');
         const compactBoundary =
           !renderReturn &&
-          (declarationMethod ||
+          ((declarationMethod && !multilineBoundary) ||
             declarationReturn ||
             declarationGuard ||
             guardReturn ||

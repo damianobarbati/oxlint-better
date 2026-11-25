@@ -57,11 +57,37 @@ const scenarios = [
     expected: 'let client = createClient();\nclient.connect();\nclient.close();',
   },
   {
-    name: 'groups multiline declarations and methods',
+    name: 'separates multiline declarations and methods',
     input:
       'const client = createClient({\n  timeout: 1000,\n});\n\nclient.send(\n  data,\n);\n\nclient.close();',
     expected:
-      'const client = createClient({\n  timeout: 1000,\n});\nclient.send(\n  data,\n);\nclient.close();',
+      'const client = createClient({\n  timeout: 1000,\n});\n\nclient.send(\n  data,\n);\n\nclient.close();',
+  },
+  {
+    name: 'separates multiline Hono middleware and routes',
+    input: `const app = new Hono();
+app.use(async (c, next) => {
+  await next();
+});
+app.all('/', (c) => {
+  return c.text('home');
+});
+app.all('/stream', (c) => {
+  return c.text('stream');
+});`,
+    expected: `const app = new Hono();
+
+app.use(async (c, next) => {
+  await next();
+});
+
+app.all('/', (c) => {
+  return c.text('home');
+});
+
+app.all('/stream', (c) => {
+  return c.text('stream');
+});`,
   },
   {
     name: 'groups destructured bindings with optional computed and chained methods',
