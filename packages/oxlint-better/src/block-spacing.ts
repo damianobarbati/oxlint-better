@@ -186,13 +186,17 @@ const blockSpacing: CreateRule = {
           statement.expression.type === 'CallExpression' &&
           source.getText(previous.expression.callee) ===
             source.getText(statement.expression.callee);
+        const renderReturn =
+          statement.type === 'ReturnStatement' &&
+          (statement.argument?.type === 'JSXElement' || statement.argument?.type === 'JSXFragment');
         const compactBoundary =
-          declarationMethod ||
-          declarationReturn ||
-          declarationGuard ||
-          guardReturn ||
-          declarationExpectation ||
-          (!multilineBoundary && (returnBoundary || similarCalls));
+          !renderReturn &&
+          (declarationMethod ||
+            declarationReturn ||
+            declarationGuard ||
+            guardReturn ||
+            declarationExpectation ||
+            (!multilineBoundary && (returnBoundary || similarCalls)));
 
         if (compactBoundary && statement.loc.start.line - previous.loc.end.line > 1) {
           const range: [number, number] = [previous.range[1], statement.range[0]];
@@ -215,14 +219,17 @@ const blockSpacing: CreateRule = {
 
         if (
           compactBoundary ||
-          (!controlStatements.has(statement.type) && !declarationBoundary && !multilineBoundary)
+          (!renderReturn &&
+            !controlStatements.has(statement.type) &&
+            !declarationBoundary &&
+            !multilineBoundary)
         ) {
           continue;
         }
 
         const firstToken = source.getFirstToken(statement);
 
-        if (!firstToken || previous.loc.end.line === firstToken.loc.start.line) {
+        if (!firstToken || (!renderReturn && previous.loc.end.line === firstToken.loc.start.line)) {
           continue;
         }
 
@@ -239,16 +246,17 @@ const blockSpacing: CreateRule = {
           before = source.getTokenBefore(first, { includeComments: true });
         }
 
-        if (!before || first.loc.start.line - before.loc.end.line !== 1) {
+        if (!before || first.loc.start.line - before.loc.end.line > 1) {
           continue;
         }
 
         const range = before.range;
+        const spacing = first.loc.start.line === before.loc.end.line ? newline + newline : newline;
         context.report({
           node: statement,
           messageId: 'missingBlankLine',
           fix(fixer) {
-            const fix = fixer.insertTextAfterRange(range, newline);
+            const fix = fixer.insertTextAfterRange(range, spacing);
 
             return fix;
           },

@@ -1,0 +1,55 @@
+{
+  "name": "oxlint-better",
+  "version": "1.0.6",
+  "description": "Oxlint plugins collection for JS/TS projects without AI slop.",
+  "keywords": [
+    "imports",
+    "lint",
+    "oxlint",
+    "plugin",
+    "typescript"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/damianobarbati/oxlint-better",
+  "files": [
+    "dist",
+    "config.json"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./pkg-import": {
+      "types": "./dist/pkg-import.d.ts",
+      "default": "./dist/pkg-import.js"
+    },
+    "./config.json": "./config.json",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/config.json config.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test",
+    "prepack": "pnpm run build && cp ../../README.md README.md"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "^1.93.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24.12.0"
+  }
+}

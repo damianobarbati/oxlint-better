@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 import type { Plugin } from '@oxlint/plugins';
+import { noComplexReturnRule } from './typescript/rules/no-complex-return.js';
 import { noObjectParametersRule } from './typescript/rules/no-object-parameters.js';
 import { noReduceAccumulatorCopyRule } from './typescript/rules/no-reduce-accumulator-copy.js';
 import { noMeaninglessUnknownAliasesRule } from './typescript/rules/no-meaningless-unknown-aliases.js';
@@ -32,6 +33,7 @@ import { noNarrowingAfterWideningRule } from './typescript/rules/no-narrowing-af
 const plugin = {
   meta: { name: 'typescript' },
   rules: {
+    'no-complex-return': noComplexReturnRule,
     'no-object-parameters': noObjectParametersRule,
     'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
     'no-meaningless-unknown-aliases': noMeaninglessUnknownAliasesRule,

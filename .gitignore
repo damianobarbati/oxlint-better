@@ -1,7 +1,7 @@
 **/node_modules
 **/dist
+/packages/oxlint-better/README.md
 
 .idea/
 .vscode/
 .DS_Store
-/config.json

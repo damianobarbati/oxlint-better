@@ -12,6 +12,11 @@ const cli = join(root, 'node_modules/oxlint/bin/oxlint');
 
 const cases = [
   {
+    rule: 'no-complex-return',
+    invalid: 'function f() { if (ready) return arr.map(v => v * 2); }',
+    valid: 'function f() { return myFn({ a, b, c }); }',
+  },
+  {
     rule: 'block-spacing',
     invalid: 'prepare();\nif (ready) {}',
     valid: 'prepare();\n\nif (ready) {}',
@@ -51,6 +56,18 @@ const cases = [
 ];
 
 const regressionCases = [
+  {
+    rule: 'no-complex-return',
+    name: 'extracts nested object literals',
+    invalid: 'function f() { return read({ filter: { active: true } }); }',
+    valid: 'function f() { return next(); }',
+  },
+  {
+    rule: 'no-complex-return',
+    name: 'extracts objects with multiple explicit properties',
+    invalid: 'function f() { return read({ id: user.id, name: user.name }); }',
+    valid: 'function f() { return arr.map(double); }',
+  },
   {
     rule: 'no-object-parameters',
     name: 'resolves generic object aliases and respects type parameter shadowing',
@@ -213,6 +230,20 @@ test('published preset loads all rules and supports consumer overrides', async (
     );
     assert.equal(result.status, 0, result.error?.message ?? result.stdout + result.stderr);
     assert.deepEqual(JSON.parse(result.stdout).diagnostics, []);
+  });
+
+  await t.test('extracts an inline callback inside its guard', () => {
+    writeFileSync(configPath, JSON.stringify(config));
+    writeFileSync(inputPath, 'function f() {\n  if (ready) return arr.map(v => v * 2);\n}');
+    const result = spawnSync(process.execPath, [cli, '-c', configPath, '--fix', inputPath], {
+      cwd: directory,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(
+      readFileSync(inputPath, 'utf8'),
+      'function f() {\n  if (ready) {\n    const result = arr.map(v => v * 2);\n    return result;\n  }\n}',
+    );
   });
 
   await t.test('preset fixes package imports', () => {

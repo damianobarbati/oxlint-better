@@ -7,8 +7,8 @@ At the start of the agent session:
 If backend code was actually changed, then verify the following all the following commands succeed:
 
 ```sh
-npm lint
-npm test
+pnpm lint
+pnpm test
 ```
 
 Changes to the following files are prohibited unless explicitly consented:
@@ -21,4 +21,4 @@ Changes to the following files are prohibited unless explicitly consented:
 **/ci.yml
 ```
 
-Changes are always allowed when applied by the `npm lint` command.
+Changes are always allowed when applied by the `pnpm lint` command.

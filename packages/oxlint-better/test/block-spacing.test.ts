@@ -14,6 +14,21 @@ const cli = fileURLToPath(new URL('../node_modules/oxlint/bin/oxlint', import.me
 
 const scenarios = [
   {
+    name: 'separates component setup from its JSX return',
+    input: 'const Cmp = () => {\n  const id = 1;\n  return <span id={id} />;\n};',
+    expected: 'const Cmp = () => {\n  const id = 1;\n\n  return <span id={id} />;\n};',
+  },
+  {
+    name: 'accepts a component with only a render return',
+    input: 'const Cmp = () => {\n  return <span />;\n};',
+    expected: 'const Cmp = () => {\n  return <span />;\n};',
+  },
+  {
+    name: 'separates a fragment return after a call on the same line',
+    input: 'function Cmp() { prepare(); return <></>; }',
+    expected: 'function Cmp() { prepare();\n\n return <></>; }',
+  },
+  {
     name: 'keeps the deadline declaration with its abort check',
     input: `async function validateCodexModel({ model, signal }) {
   const deadline = AbortSignal.any([signal, AbortSignal.timeout(30_000)]);
